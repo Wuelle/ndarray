@@ -12,6 +12,7 @@ use crate::numeric_util;
 use crate::{LinalgScalar, Zip};
 
 use std::any::TypeId;
+use std::ops::{Add, Mul};
 use alloc::vec::Vec;
 
 #[cfg(feature = "blas")]
@@ -64,10 +65,11 @@ where
         Dot::dot(self, rhs)
     }
 
-    fn dot_generic<S2>(&self, rhs: &ArrayBase<S2, Ix1>) -> A
+    fn dot_generic<B, S2>(&self, rhs: &ArrayBase<S2, Ix1>) -> A
     where
-        S2: Data<Elem = A>,
-        A: LinalgScalar,
+        S2: Data<Elem = B>,
+        A: LinalgScalar + Mul<B, Output=A> + Add<B, Output=A>,
+        B: LinalgScalar,
     {
         debug_assert_eq!(self.len(), rhs.len());
         assert!(self.len() == rhs.len());
@@ -86,19 +88,21 @@ where
     }
 
     #[cfg(not(feature = "blas"))]
-    fn dot_impl<S2>(&self, rhs: &ArrayBase<S2, Ix1>) -> A
+    fn dot_impl<B, S2>(&self, rhs: &ArrayBase<S2, Ix1>) -> A
     where
-        S2: Data<Elem = A>,
-        A: LinalgScalar,
+        S2: Data<Elem = B>,
+        A: LinalgScalar + Mul<B, Output=A> + Add<B, Output=A>,
+        B: LinalgScalar,
     {
         self.dot_generic(rhs)
     }
 
     #[cfg(feature = "blas")]
-    fn dot_impl<S2>(&self, rhs: &ArrayBase<S2, Ix1>) -> A
+    fn dot_impl<B, S2>(&self, rhs: &ArrayBase<S2, Ix1>) -> A
     where
-        S2: Data<Elem = A>,
-        A: LinalgScalar,
+        S2: Data<Elem = B>,
+        A: LinalgScalar + Mul<B, Output=A> + Add<B, Output=A>,
+        B: LinalgScalar,
     {
         // Use only if the vector is large enough to be worth it
         if self.len() >= DOT_BLAS_CUTOFF {
@@ -167,11 +171,12 @@ pub trait Dot<Rhs> {
     fn dot(&self, rhs: &Rhs) -> Self::Output;
 }
 
-impl<A, S, S2> Dot<ArrayBase<S2, Ix1>> for ArrayBase<S, Ix1>
+impl<A, B, S, S2> Dot<ArrayBase<S2, Ix1>> for ArrayBase<S, Ix1>
 where
     S: Data<Elem = A>,
-    S2: Data<Elem = A>,
-    A: LinalgScalar,
+    S2: Data<Elem = B>,
+    A: LinalgScalar + Mul<B, Output=A> + Add<B, Output=A>,
+    B: LinalgScalar,
 {
     type Output = A;
 
