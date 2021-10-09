@@ -7,6 +7,7 @@
 // except according to those terms.
 
 use std::cmp;
+use std::ops::{Add, Mul};
 
 use crate::LinalgScalar;
 
@@ -61,9 +62,10 @@ where
 /// Compute the dot product.
 ///
 /// `xs` and `ys` must be the same length
-pub fn unrolled_dot<A>(xs: &[A], ys: &[A]) -> A
+pub fn unrolled_dot<A, B>(xs: &[A], ys: &[B]) -> A
 where
-    A: LinalgScalar,
+    A: LinalgScalar + Mul<B, Output=A> + Add<B, Output=A>,
+    B: LinalgScalar,
 {
     debug_assert_eq!(xs.len(), ys.len());
     // eightfold unrolled so that floating point can be vectorized
